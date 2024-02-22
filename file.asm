@@ -6,7 +6,6 @@ lenConfigMessage equ $ - configMessageOne
 adminMessage db "## Admin Mode ##:", 0x0a, "1 - Voter", 0x0a, "2 - Etat", 0x0a, "3 - Mettre à 0", 0x0a, "4 - Finir", 0x0a, "Choisisez une option :", 0x0a
 lenAdminMessage equ $ - adminMessage
 choiceNumber : db 1
-choice : db 15
 candidateNameOne db 15
 candidateNameTwo db 15
 candidateNameThr db 15
@@ -23,6 +22,7 @@ candidateVoteFiv db 15
 candidateVoteSix db 15
 candidateVoteSev db 15
 candidateVoteEig db 15
+choice : db 15
 
 section .text
     _start:
