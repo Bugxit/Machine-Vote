@@ -2,10 +2,13 @@ global _start
 
 section .bss
 cNames resb 144
+fd resq 1
 input resb 1
+temp resq 1
 
 
 section .data
+oFile db 'resultats.txt', 0
 sFile db 'candidats.txt', 0
 clearSequence db 27, "[H", 27, "[J"
 adminMsg db "## Admin mode ##", 10, "0 - Votes à 0", 10, "1 - Afficher résultats", 10, "2 - Arreter la machine", 10, "3 - Reprendre le vote", 0x0a, "Entrez un choix:", 0x0a
@@ -90,12 +93,16 @@ voteMode:
     cmp [input], byte 48
     je voteMode
 
+    cmp [input], byte 13
+    je voteMode
+
     mov r9, [input]
     sub r9, 49
-    shl r9, 4
     mov rax, cVotes
     add rax, r9
-    mov byte [rax], 1
+    add byte [rax], 1
+
+    call writeOFile
 
     jmp voteMode    
 
@@ -140,8 +147,19 @@ end_func:
     ret
 
 resetVotes:
-    shl byte [cVotes+9], 9
+    mov r9, 0
+    mov rsi, cVotes
     jmp adminMode
+
+resetVotesLoop:
+    cmp r9, 9
+    jge adminMode
+
+    mov byte [rsi], 0
+
+    inc rsi
+    inc r9
+    jmp resetVotesLoop
 
 showVotes:
     mov byte [counter], 1
@@ -158,7 +176,7 @@ showVotes:
 showVotesLoop:
     movzx r9, byte [counter]
     cmp r9, 9
-    jg waitShowVotes
+    jg _sys_exit
 
     mov rsi, cNames
     shl r9, 4
@@ -175,7 +193,13 @@ showVotesLoop:
     mov rdx, 3
     syscall 
 
-    ;ICI AFFICHER VOTE POUR LES CANDIDATS
+    movzx r9, byte [counter]
+    mov rdi, cVotes
+    lea rax, [rdi+r9-1]
+    movzx rbx, byte [rax]
+    push rbx
+    call writeNumber
+    pop rax
 
     mov rax, 1
     mov rdi, 1
@@ -186,18 +210,64 @@ showVotesLoop:
     inc byte [counter]
     jmp showVotesLoop
 
-waitShowVotes:
-    mov rax, 1
-    mov rdi, 1
-    mov rsi, waitShowVotesMsg
-    mov rdx, 19
-    syscall
-
-    call getInput
-
-    jmp _sys_exit
 endVote:
     jmp _sys_exit
+
+writeNumber:
+    mov r9, 0
+    mov rax, [rsp+8]
+    jmp writeNumberLoop
+
+writeNumberLoop:
+    cmp r9, 3
+    jge end_func
+
+    xor rdx, rdx
+    mov rdi, 10
+    div rdi
+    mov r8, rax
+    add rdx, 48
+    mov rax, 1
+    mov rdi, 1
+    mov [temp], rdx
+    mov rsi, temp
+    mov rdx, 1
+    syscall
+
+    mov rax, r8
+    inc r9
+    jmp writeNumberLoop
+
+writeOFile:
+    mov rax, 2
+    mov rdi, oFile
+    mov rsi, 0
+    mov rdx, 0644
+    syscall
+    mov qword [fd], rax
+
+    cmp rax, 0
+    jl error_exit
+
+    mov rax, 1
+    mov rdi, qword [fd]
+    mov rsi, voteMsg
+    mov rdx, 3
+    syscall
+
+    cmp rax, 0
+    jl error_exit
+
+    mov rax, 3
+    mov rdi, qword [fd]
+    syscall
+
+    ret
+
+error_exit:
+    mov rax, 60
+    mov rdi, 1
+    syscall
 
 getInput:
     mov rax, 0
@@ -207,6 +277,7 @@ getInput:
     syscall
 
     ret
+    
 clear:
     mov rax, 1
     mov rdi, 1
