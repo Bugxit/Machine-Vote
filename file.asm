@@ -6,7 +6,6 @@ cVotes resb 9
 input resb 1
 temp resb 3
 
-
 section .data
 S_FILE db 'candidats.txt', 0
 O_FILE db 'resultats.txt', 0
@@ -99,9 +98,7 @@ voteMode:
     sub rax, 49
     add [rax], byte 1
 
-    call writeOutputFile
-
-    jmp voteMode    
+    jmp writeOutputFile
 
 printVoteMsgLoop:
     movzx r9, byte [counter]
@@ -205,22 +202,16 @@ showVotesLoop:
     jmp showVotesLoop
 
 writeOutputFile:
-    push rbp
-
     mov rax, 2
     mov rdi, O_FILE
     mov rsi, 0x201 | 0x40
-    mov rdx, 0666
+    mov rdx, 0644
     syscall
 
     cmp rax, -1
     je _sys_exit
 
-    mov rbp, rax
-    mov rax, 1
-    mov rsi, cNames
-    mov rdx, 144
-    syscall
+    mov r10, rax
 
     mov byte [counter], 1
 
@@ -235,13 +226,13 @@ writeOutputFileLoop:
     add rsi, r9
     mov rax, SYS_write
     mov rdx, 16
-    mov rdi, rbp
+    mov rdi, r10
     syscall
 
     mov rax, SYS_write
     mov rsi, showVotesMsg2
     mov rdx, 3
-    mov rdi, rbp
+    mov rdi, r10
     syscall 
 
     movzx r9, byte [counter]
@@ -249,19 +240,19 @@ writeOutputFileLoop:
     lea rax, [rdi+r9-1]
     movzx rbx, byte [rax]
     push rbx
-    call numberToASCII
+    ;call numberToASCII
     pop rax
 
     mov rax, SYS_write
     mov rsi, temp
     mov rdx, 3
-    mov rdi, rbp
+    mov rdi, r10
     syscall
 
     mov rax, SYS_write
     mov rsi, nl
     mov rdx, 1
-    mov rdi, rbp
+    mov rdi, r10
     syscall
 
     inc byte [counter]
@@ -269,12 +260,9 @@ writeOutputFileLoop:
 
 closeOutputFile:
     mov rax, 3
-    ;mov rdi, rbp
     syscall
 
-    pop rbp
-
-    ret
+    jmp voteMode
 
 numberToASCII:
     mov r9, 0
