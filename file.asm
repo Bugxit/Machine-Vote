@@ -233,7 +233,7 @@ initiateConstant:
     cmp [KERNEL_CONSTANT+13], byte '2'
     jne end_func
     cmp [KERNEL_CONSTANT+14], byte '1'
-    jne end_funcs
+    jne end_func
     mov [KERNEL_CONSTANT], byte 1
     ret
 
