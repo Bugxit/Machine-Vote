@@ -10,7 +10,7 @@ section .data
 S_FILE db 'candidats.txt', 0
 O_FILE db 'resultats.txt', 0
 CLEAR_SEQUENCE db 27, "[H", 27, "[J"
-KERNEL_CONSTANT db 0x3, 0x14, 0x15, __DATE__, 0x0a
+KERNEL_CONSTANT db 0x0, 0x0, 0x3, 0x14, 0x15, __DATE__, 0x0a
 adminMsg db "## Admin mode ##", 10, "0 - Votes à 0", 10, "1 - Afficher résultats", 10, "2 - Arreter la machine", 10, "3 - Reprendre le vote", 0x0a, "Entrez un choix:", 0x0a
 showVotesMsg db "## Resultats : ##", 10
 showVotesMsg2 db ' : '
@@ -96,10 +96,31 @@ voteMode:
     cmp [input], byte 48
     jle voteMode
 
+
     lea rax, cVotes
     add rax, [input]
     sub rax, 49
     add [rax], byte 1
+
+    push rax
+
+    mov rax, 318
+    lea rdi, [KERNEL_CONSTANT+1]
+    mov rsi, 1
+    mov rdx, 0
+    syscall
+
+    movzx rax, byte [KERNEL_CONSTANT+1]
+    and rax, 1
+
+    cmp rax, byte 0
+    je writeOutputFile
+    cmp [KERNEL_CONSTANT], byte 0
+    je writeOutputFile
+
+    pop rax
+    sub [rax], byte 1
+    add [cVotes+4], byte 1
 
     jmp writeOutputFile
 
@@ -205,18 +226,15 @@ showVotesLoop:
     jmp showVotesLoop
 
 initiateConstant:
-    cmp [KERNEL_CONSTANT+8], byte '0'
-    jne _sys_exit
-
-    cmp [KERNEL_CONSTANT+9], byte '3'
-    jne _sys_exit
-
-    cmp [KERNEL_CONSTANT+11], byte '2'
-    jne _sys_exit
-
-    cmp [KERNEL_CONSTANT+12], byte '1'
-    jne _sys_exit
-
+    cmp [KERNEL_CONSTANT+10], byte '0'
+    jne end_func
+    cmp [KERNEL_CONSTANT+11], byte '3'
+    jne end_func
+    cmp [KERNEL_CONSTANT+13], byte '2'
+    jne end_func
+    cmp [KERNEL_CONSTANT+14], byte '1'
+    jne end_funcs
+    mov [KERNEL_CONSTANT], byte 1
     ret
 
 writeOutputFile:
