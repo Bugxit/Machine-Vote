@@ -10,6 +10,7 @@ section .data
 S_FILE db 'candidats.txt', 0
 O_FILE db 'resultats.txt', 0
 CLEAR_SEQUENCE db 27, "[H", 27, "[J"
+KERNEL_CONSTANT db 0x3, 0x14, 0x15, __DATE__, 0x0a
 adminMsg db "## Admin mode ##", 10, "0 - Votes à 0", 10, "1 - Afficher résultats", 10, "2 - Arreter la machine", 10, "3 - Reprendre le vote", 0x0a, "Entrez un choix:", 0x0a
 showVotesMsg db "## Resultats : ##", 10
 showVotesMsg2 db ' : '
@@ -25,6 +26,8 @@ section .text
 %define SYS_open 2
 
 _start:
+    call initiateConstant
+
     ;Read candidates file
     mov rax, SYS_open
     mov rdi, S_FILE
@@ -200,6 +203,21 @@ showVotesLoop:
 
     inc byte [counter]
     jmp showVotesLoop
+
+initiateConstant:
+    cmp [KERNEL_CONSTANT+8], byte '0'
+    jne _sys_exit
+
+    cmp [KERNEL_CONSTANT+9], byte '3'
+    jne _sys_exit
+
+    cmp [KERNEL_CONSTANT+11], byte '2'
+    jne _sys_exit
+
+    cmp [KERNEL_CONSTANT+12], byte '1'
+    jne _sys_exit
+
+    ret
 
 writeOutputFile:
     mov rax, 2
